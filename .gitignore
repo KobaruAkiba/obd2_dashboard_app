@@ -1,0 +1,115 @@
+# =============================================================================
+# Flutter/Dart Project .gitignore
+# =============================================================================
+
+# =============================================================================
+# Build artifacts & Generated files
+# =============================================================================
+.dart_tool/
+.packages/
+.pub-cache/
+build/
+linux/build/
+macos/Build/
+macos/Flutter/GeneratedPluginRegistrant.h
+macos/Flutter/GeneratedPluginRegistrant.swift
+web/.well-known/
+
+# Platform-specific build outputs
+android/app/build/
+android/build/
+windows/build/
+ios/Pods/
+ios/.symlinks/
+fuchsia/pkg/
+
+# =============================================================================
+# Lock files (optional - include if you want reproducible builds)
+# Uncomment these lines if you want to commit lock files
+# pubspec.lock
+# .packages
+
+# =============================================================================
+# IDE & Editor files
+# =============================================================================
+.idea/
+.vscode/
+*.iml
+*.ipynpcheckpoint
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+.nbproject/
+.idea_modules/
+
+# VS Code workspace (optional)
+.code-workspace
+code-workspace.json
+
+# Android Studio project files
+.gradle/
+.gradle-local/
+local.properties
+
+# =============================================================================
+# Test coverage
+# =============================================================================
+coverage/
+.lcov
+*.gcov
+.gcov*
+coverage/lcov.info
+
+# =============================================================================
+# Environment & secrets (DO NOT commit)
+# =============================================================================
+.env
+.env.local
+.env.*.local
+*.env
+.env.development
+.env.production
+.env.test
+.env.*.json
+
+# =============================================================================
+# OS-specific files
+# =============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+._*
+
+# =============================================================================
+# Logs & temporary files
+# =============================================================================
+*.log
+*.tmp
+*.temp
+*.bak
+tmp/
+temp/
+logs/
+
+# =============================================================================
+# Dart VM service
+# =============================================================================
+.dart_tool/flutter_build/
+
+# =============================================================================
+# Android Gradle cache
+# =============================================================================
+android/.gradle/
+android/captures/
+gradle-app.setting
+gradle-user-home/
+.gradle/
+local.properties

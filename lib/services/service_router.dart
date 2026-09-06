@@ -1,227 +1,117 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform, kIsWeb, kDebugMode;
+
 import 'package:obd_car_monitor/utils/debug.dart';
-import '../services/mock_bluetooth_serial_service.dart';
-import '../services/windows_mock_odb_service.dart';
-import '../services/windows_can_bus_service.dart';
-import '../services/bluetooth_odb_service.dart';
-import '../services/windows_bluetooth_serial_service.dart';
 
-/// ServiceRouter intelligently selects the appropriate ODB service based on
-/// platform, build type, and available hardware.
+import 'mock_obd_service.dart';
+import 'obd_service.dart';
+import 'stub_hardware_obd_service.dart';
+
+/// Selects an [ObdService] from platform and environment configuration.
+///
+/// Supported `OBD_SERVICE_TYPE` values (via `--dart-define` or env):
+/// - `mock` / `mock-windows` / `mock-mobile` — simulated telemetry
+/// - `bt-serial` / `windows-bluetooth-serial` — Bluetooth serial stub
+/// - `windows-can-bus` / `can-bus` — CAN bus stub
+/// - `ble-uart` — mobile BLE stub
+/// - unset / `auto` — platform hardware stub (mock is a debug UI switch)
 class ServiceRouter {
-  static const String windowsRealService = 'windows-can-bus';
-  static const String mobileBleService = 'ble-uart';
-  static const String mockWindowsService = 'mock-windows';
-  static const String mockMobileService = 'mock-mobile';
-  static const String windowsBtSerialService = 'bt-serial';
-  static const String windowsBleService = 'windows-ble';
-  static const String windowsCanBusService = 'can-bus';
+  static const mock = 'mock';
+  static const mockWindows = 'mock-windows';
+  static const mockMobile = 'mock-mobile';
+  static const btSerial = 'bt-serial';
+  static const windowsBluetoothSerial = 'windows-bluetooth-serial';
+  static const windowsCanBus = 'windows-can-bus';
+  static const canBus = 'can-bus';
+  static const bleUart = 'ble-uart';
 
-  /// Environment variable to force specific service type (for testing)
-  static String? get forcedServiceType =>
-      Platform.environment['OBD_SERVICE_TYPE'];
-
-  /// Whether we should use real hardware or mock data
-  static bool get useRealHardware =>
-      forcedServiceType == null || forcedServiceType == windowsRealService;
-
-  /// Check if running in debug mode (may affect service selection)
-  static bool get isDebugMode {
-    final debug = Platform.environment['DEBUG'];
-    return debug != null && debug.toString().toLowerCase() == 'true';
-  }
-
-  /// Available services with descriptions
-  static Map<String, String> get availableServices => {
-        windowsRealService: 'Windows PCAN/Kvaser CAN Bus (Real)',
-        mobileBleService: 'Mobile BLE UART OBDII (Real)',
-        mockWindowsService: 'Windows Mock Data (Development)',
-        mockMobileService: 'Mobile Mock Bluetooth (Development)',
-      };
-
-  /// Get recommended service for current platform/configuration
-  static String getRecommendedService() {
-    if (useRealHardware) {
-      return useRealHardwareCanBus ? windowsRealService : mobileBleService;
-    }
-
-    // Fall back to mock services for development
-    final isWindows =
-        Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows;
-    return isWindows ? mockWindowsService : mockMobileService;
-  }
-
-  /// Check if CAN bus service should be used (Windows with physical adapter)
-  static bool get useRealHardwareCanBus =>
-      useRealHardware && Platform.isWindows ||
-      defaultTargetPlatform == TargetPlatform.windows;
-
-  /// Check for physical CAN adapter on Windows/Linux
-  static Future<bool> _checkForPhysicalCanAdapter() async {
-    if (!Platform.isWindows) return false;
-
-    // Check for PCAN USB device
+  static String? get forcedServiceType {
+    const fromDefine = String.fromEnvironment('OBD_SERVICE_TYPE');
+    if (fromDefine.isNotEmpty) return fromDefine;
+    if (kIsWeb) return null;
     try {
-      final result = await Process.run('powershell', [
-        '-Command',
-        'Get-PnpDevice | Where-Object {\$device.Class -eq "CAN-Bus"}'
-      ]);
-
-      if (result.exitCode == 0) {
-        return result.stdout.toString().isNotEmpty;
-      }
-    } catch (e) {
-      printIfDebug('[SERVICE] Checking for CAN adapter failed: $e');
+      return Platform.environment['OBD_SERVICE_TYPE'];
+    } catch (_) {
+      return null;
     }
+  }
 
-    // Check for Kvaser device
+  static bool get isDebugFlag {
+    const fromDefine = String.fromEnvironment('DEBUG');
+    if (fromDefine.toLowerCase() == 'true') return true;
+    if (kIsWeb) return kDebugMode;
     try {
-      final result = await Process.run('powershell', [
-        '-Command',
-        'Get-PnpDevice | Where-Object {\$device.FriendlyName -like "*Kvaser*" -or \$device.Class -eq "CAN-Bus"}'
-      ]);
-
-      if (result.exitCode == 0) {
-        return result.stdout.toString().contains('Kvaser');
-      }
-    } catch (e) {
-      printIfDebug('[SERVICE] Checking for Kvaser adapter failed: $e');
+      final env = Platform.environment['DEBUG'];
+      return env != null && env.toLowerCase() == 'true';
+    } catch (_) {
+      return kDebugMode;
     }
-
-    return false;
   }
 
-  /// Create appropriate service instance based on current configuration
-  static dynamic createService() async {
-    final serviceType = ServiceRouter.forcedServiceType ?? 'auto';
+  static bool get isWindows =>
+      !kIsWeb &&
+      (Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows);
 
-    // Check if we're explicitly using Bluetooth Serial on Windows
-    if (serviceType == windowsBtSerialService) {
-      printIfDebug(
-          '[SERVICE] Creating Windows Bluetooth Serial Port service for OBD dongle');
-      return WindowsBluetoothSerialService();
+  static bool get wantsBluetooth {
+    final type = forcedServiceType;
+    if (type == btSerial || type == windowsBluetoothSerial) return true;
+    if (kIsWeb) return false;
+    try {
+      return Platform.environment['USE_BLUETOOTH_OBD'] == 'true';
+    } catch (_) {
+      return false;
     }
-
-    // Check auto-detection for Bluetooth on Windows
-    if ((Platform.isWindows ||
-            defaultTargetPlatform == TargetPlatform.windows) &&
-        Platform.environment['USE_BLUETOOTH_OBD'] == 'true') {
-      printIfDebug('[SERVICE] Auto-detected request for Bluetooth OBD dongle');
-      return WindowsBluetoothSerialService();
-    }
-
-    // Standard flow: check real hardware or mock
-    if (!useRealHardware) {
-      // Use mock services for development/testing
-      final isWindows =
-          Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows;
-      return isWindows ? WindowsMockOdbService() : MockBluetoothSerialService();
-    }
-
-    // Real hardware mode - select based on platform and adapter
-    if (Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows) {
-      final hasPhysicalAdapter = await _checkForPhysicalCanAdapter();
-
-      if (hasPhysicalAdapter) {
-        // Use real CAN bus service with physical PCAN/Kvaser
-        printIfDebug(
-            '[SERVICE] Using REAL CAN Bus - Physical adapter detected');
-        return WindowsCanBusService();
-      } else {
-        // Fall back to virtual CAN tools
-        printIfDebug(
-            '[SERVICE] No physical CAN adapter - falling back to virtual CAN');
-
-        return WindowsCanBusService(); // Will use virtual mode
-      }
-    }
-
-    // Mobile platform - use real BLE service
-    printIfDebug('[SERVICE] Using REAL BLE UART for mobile');
-    return BluetoothOdbService();
   }
 
-  /// Get service status information for debug UI
+  /// True only when mock is explicitly forced via define/env.
+  static bool get preferMock {
+    final type = forcedServiceType;
+    if (type == null || type == 'auto') return false;
+    return type == mock || type == mockWindows || type == mockMobile;
+  }
+
+  /// Creates a service. Pass [useMock] to override compile-time preference
+  /// (used by the debug-only mock switch on the dashboard).
+  static Future<ObdService> createService({bool? useMock}) async {
+    final type = forcedServiceType ?? 'auto';
+    final wantMock = useMock ?? preferMock;
+    printIfDebug(
+      '[SERVICE] Creating service type=$type preferMock=$preferMock '
+      'useMock=$wantMock',
+    );
+
+    if (wantMock) {
+      return MockObdService();
+    }
+
+    if (wantsBluetooth || type == btSerial || type == windowsBluetoothSerial) {
+      return StubHardwareObdService(displayName: 'Bluetooth serial (stub)');
+    }
+
+    if (type == windowsCanBus || type == canBus) {
+      return StubHardwareObdService(displayName: 'CAN bus (stub)');
+    }
+
+    if (type == bleUart || !isWindows) {
+      return StubHardwareObdService(displayName: 'BLE UART (stub)');
+    }
+
+    if (isWindows) {
+      return StubHardwareObdService(displayName: 'CAN bus (stub)');
+    }
+
+    return StubHardwareObdService(displayName: 'BLE UART (stub)');
+  }
+
   static Map<String, dynamic> getServiceStatus() {
     return {
-      'useRealHardware': useRealHardware,
-      'isWindows':
-          Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows,
-      'isDebugMode': isDebugMode,
-      'serviceType': forcedServiceType ?? getRecommendedService(),
-      'recommendedService': getRecommendedService(),
-      'availableServices': availableServices,
+      'preferMock': preferMock,
+      'isWindows': isWindows,
+      'isDebugMode': isDebugFlag || kDebugMode,
+      'serviceType': forcedServiceType ?? (preferMock ? mock : 'auto'),
+      'wantsBluetooth': wantsBluetooth,
     };
-  }
-
-  /// Get appropriate connect parameters for the service
-  static Future<Map<String, dynamic>> getServiceConnectParams() async {
-    if (!useRealHardware) {
-      return {'mock': true};
-    }
-
-    if (Platform.isWindows || defaultTargetPlatform == TargetPlatform.windows) {
-      final toolPath = Platform.environment['VIRTUAL_CAN_TOOL'];
-
-      if (toolPath != null && File(toolPath).existsSync()) {
-        return {
-          'virtualCanTool': toolPath,
-          'interface': r'\Device\CAN0',
-          'baudRate': 500000,
-        };
-      }
-
-      final interfaces = await _detectPhysicalInterfaces();
-
-      if (interfaces.isNotEmpty) {
-        return {
-          'physicalAdapter': interfaces.first,
-          'interfaceName': interfaces.first,
-          'baudRate': 500000,
-        };
-      }
-
-      // Default configuration for virtual CAN tools
-      return {
-        'virtualCanTool': 'C:/Program Files/can-utils/cantool.exe',
-        'interface': r'\Device\CAN0',
-        'baudRate': 500000,
-      };
-    }
-
-    // Mobile BLE defaults
-    return {
-      'deviceId': null,
-      'baudRate': 115200,
-      'isSoleilx': true,
-    };
-  }
-
-  /// Detect available CAN interfaces for PCAN/Kvaser
-  static Future<List<String>> _detectPhysicalInterfaces() async {
-    final List<String> interfaces = [];
-
-    if (Platform.isWindows) {
-      try {
-        final result = await Process.run('powershell', [
-          '-Command',
-          'Get-PnpDevice -Class "CAN-Bus" | Select-Object FriendlyName, Status | Format-Table'
-        ]);
-
-        if (result.exitCode == 0) {
-          interfaces.addAll(
-            result.stdout
-                .toString()
-                .split('\n')
-                .where((line) => line.trim().isNotEmpty)
-                .map((line) => line.trim()),
-          );
-        }
-      } catch (e) {}
-    }
-
-    return interfaces;
   }
 }

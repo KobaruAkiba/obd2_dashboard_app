@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-import '../obdii/pid_parser.dart';
-
+/// Live vehicle telemetry from OBD-II (engineering units).
 class VehicleData {
   final double? rpm;
   final double? speed;
@@ -8,79 +6,95 @@ class VehicleData {
   final double? intakeTemp;
   final double? throttlePosition;
   final double? batteryVoltage;
-  final int gear; // Gear position: -1=Neutral, 0=Drive, 1-7=manual gears
+  final double fuelLevel;
+
+  /// App-estimated gear: -1 = N, 0 = D (auto), 1–7 = manual.
+  /// OBD-II Mode 01 does not provide gear position for most vehicles.
+  final int gear;
+
   final bool engineReady;
   final String dtcs;
-  final DateTime freezeFrameTimestamp = DateTime.now();
-  final double fuelLevel;
+  final DateTime? freezeFrameTimestamp;
   final int? odometer;
 
-  VehicleData({
+  const VehicleData({
     this.rpm,
     this.speed,
     this.coolantTemp,
     this.intakeTemp,
     this.throttlePosition,
     this.batteryVoltage,
-    this.gear = 0, // Default to Drive
+    this.gear = 0,
     this.engineReady = true,
     this.dtcs = '',
-    // this.freezeFrameTimestamp = DateTime.now(),
+    this.freezeFrameTimestamp,
     this.fuelLevel = 100.0,
     this.odometer,
   });
 
-  static VehicleData fromCanBytes(List<int> canData) {
-    if (canData.isEmpty) return VehicleData();
-
+  VehicleData copyWith({
+    double? rpm,
+    double? speed,
+    double? coolantTemp,
+    double? intakeTemp,
+    double? throttlePosition,
+    double? batteryVoltage,
+    double? fuelLevel,
+    int? gear,
+    bool? engineReady,
+    String? dtcs,
+    DateTime? freezeFrameTimestamp,
+    int? odometer,
+  }) {
     return VehicleData(
-      rpm: OdbiipidParser.parsePid1(canData[0]),
-      speed: OdbiipidParser.parsePid2([canData[1], canData[2]]),
-      coolantTemp: OdbiipidParser.parsePid5([canData[3], canData[4]]),
-      intakeTemp: OdbiipidParser.parsePid6([canData[5], canData[6]]),
-      throttlePosition: OdbiipidParser.parsePid11([canData[7], canData[8]]),
-      batteryVoltage: OdbiipidParser.parsePid47(canData),
-      gear: 0, // Default to Drive - must track separately
+      rpm: rpm ?? this.rpm,
+      speed: speed ?? this.speed,
+      coolantTemp: coolantTemp ?? this.coolantTemp,
+      intakeTemp: intakeTemp ?? this.intakeTemp,
+      throttlePosition: throttlePosition ?? this.throttlePosition,
+      batteryVoltage: batteryVoltage ?? this.batteryVoltage,
+      fuelLevel: fuelLevel ?? this.fuelLevel,
+      gear: gear ?? this.gear,
+      engineReady: engineReady ?? this.engineReady,
+      dtcs: dtcs ?? this.dtcs,
+      freezeFrameTimestamp: freezeFrameTimestamp ?? this.freezeFrameTimestamp,
+      odometer: odometer ?? this.odometer,
     );
   }
 
-  String getStatusSummary() {
-    final List<String> components = [];
-
-    if (rpm != null) components.add('RPM: ${rpm!.toStringAsFixed(0)}');
-    if (speed != null) {
-      components.add('Speed: ${speed!.toStringAsFixed(1)} km/h');
-    }
-
-    final gearStr = _getGearDisplay(gear);
-    components.add('Gear: $gearStr');
-
-    if (coolantTemp != null) {
-      components.add('Coolant: ${coolantTemp!.toStringAsFixed(0)}°C');
-    }
-    if (intakeTemp != null) {
-      components.add('Intake: ${intakeTemp!.toStringAsFixed(0)}°C');
-    }
-    if (throttlePosition != null) {
-      components.add('Throttle: ${throttlePosition!.toStringAsFixed(1)}%');
-    }
-
-    if (dtcs.isNotEmpty) {
-      components.add('DTCs Detected: $dtcs');
-    }
-
-    return components.join('; ');
-  }
-
-  String _getGearDisplay(int gear) {
+  String get gearLabel {
     switch (gear) {
       case -1:
-        return 'N'; // Neutral
+        return 'N';
       case 0:
-        return 'D'; // Drive
+        return 'D';
       default:
-        return gear.toString(); // Manual gears
+        return gear.toString();
     }
+  }
+
+  String get statusSummary {
+    final parts = <String>[];
+    if (rpm != null) parts.add('RPM ${rpm!.toStringAsFixed(0)}');
+    if (speed != null) parts.add('${speed!.toStringAsFixed(0)} km/h');
+    parts.add('Gear $gearLabel');
+    if (coolantTemp != null) {
+      parts.add('Coolant ${coolantTemp!.toStringAsFixed(0)}°C');
+    }
+    if (dtcs.isNotEmpty) parts.add('DTC $dtcs');
+    return parts.join(' · ');
+  }
+
+  /// Rough gear estimate for mock / demo only.
+  static int estimateGear(double rpm, double speedKmh) {
+    if (speedKmh < 1) return -1;
+    if (speedKmh < 20) return 1;
+    if (speedKmh < 40) return 2;
+    if (speedKmh < 65) return 3;
+    if (speedKmh < 90) return 4;
+    if (speedKmh < 120) return 5;
+    if (rpm > 4500) return 5;
+    return 0;
   }
 }
 
@@ -88,18 +102,12 @@ class DtcEntry {
   final String code;
   final String description;
   final int severity;
-  final DateTime detectedAt = DateTime.now();
+  final DateTime detectedAt;
 
   DtcEntry({
     required this.code,
     required this.description,
     required this.severity,
-    // this.detectedAt = DateTime.now(),
-  });
-
-  Color getSeverityColor() => severity == 1
-      ? Colors.orange
-      : severity == 2
-          ? Colors.red
-          : Colors.black;
+    DateTime? detectedAt,
+  }) : detectedAt = detectedAt ?? DateTime.now();
 }

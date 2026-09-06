@@ -1,9 +1,9 @@
 name: obd_car_monitor
-description: OBDII Monitor - Real CAN bus and Bluetooth support for Windows/Mobile
+description: OBD-II vehicle monitor — live dashboard with mock data and hardware stubs.
 
 publish_to: 'none'
 
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -12,10 +12,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  fl_chart: ^0.69.0
-  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true

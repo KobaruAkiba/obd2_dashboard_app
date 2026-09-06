@@ -1,158 +1,82 @@
 package com.example.obd_car_monitor
 
-import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
+/**
+ * Native Bluetooth bridge stub.
+ * Real SPP/BLE connection will be wired here when hardware support lands.
+ */
 class MainActivity : FlutterActivity() {
-    
-    private val CHANNEL = "obd_bluetooth/android"
+
+    private val channelName = "obd_bluetooth/android"
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var receiver: BroadcastReceiver? = null
-    
-    @Override
-    fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+
+    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        
-        // Create method channel for Flutter to Android communication
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "discover_devices" -> {
-                    discoverDevices(result)
-                }
-                "connect" -> {
-                    connectToDevice(call, result)
-                }
-                "disconnect" -> {
-                    disconnect()
-                    result.success(null)
-                }
-                "enable_streaming" -> {
-                    enableStreaming()
-                    result.success(true)
-                }
-                "is_bluetooth_enabled" -> {
-                    isBluetoothEnabled(result)
-                }
-                "check_permissions" -> {
-                    checkPermissions(result)
-                }
-                "get_connection_status" -> {
-                    getConnectionStatus(result)
-                }
-                else -> {
-                    result.notImplemented()
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "discover_devices" -> discoverDevices(result)
+                    "connect" -> connectToDevice(call, result)
+                    "disconnect" -> {
+                        disconnect()
+                        result.success(null)
+                    }
+                    "enable_streaming" -> {
+                        result.success(true)
+                    }
+                    "is_bluetooth_enabled" -> isBluetoothEnabled(result)
+                    "check_permissions" -> result.success(true)
+                    "get_connection_status" -> result.success(false)
+                    else -> result.notImplemented()
                 }
             }
-        }
     }
-    
-    private fun enableStreaming() {
-        // Start foreground service if needed
-        // Enable Bluetooth data streaming from adapter
-    }
-    
+
     private fun discoverDevices(result: MethodChannel.Result) {
-        try {
-            val devices = getDiscoverableDevices().toList()
-            result.success(devices)
-        } catch (e: Exception) {
-            result.error("DISCOVERY_ERROR", e.message, null)
-        }
+        result.success(emptyList<Map<String, Any?>>())
     }
-    
+
     private fun connectToDevice(call: MethodCall, result: MethodChannel.Result) {
-        val arguments = call.arguments as? Map<String, Any> ?: return
-        
-        val macAddress = arguments["mac"] as? String
-        val serviceUuid = arguments["serviceUuid"] as? String
-        val baudRate = arguments["baudRate"] as? Int
-        
+        val arguments = call.arguments as? Map<*, *>
+        val macAddress = arguments?.get("mac") as? String
         if (macAddress == null) {
             result.error("NULL_MAC", "MAC address is required", null)
             return
         }
-        
-        try {
-            // Parse and connect to Bluetooth device
-            // Implementation depends on available Bluetooth Serial library
-            
-            // Example: Connect using bluetooth_serial_plus logic
-            // This would be implemented in native Java/Kotlin code
-            val connectionSuccess = true // Simulated for now
-            
-            if (connectionSuccess) {
-                result.success(true)
-            } else {
-                result.error("CONNECTION_ERROR", "Failed to connect to device", null)
-            }
-        } catch (e: Exception) {
-            result.error("CONNECTION_ERROR", e.message, null)
-        }
+        // Stub: report success so Flutter can continue with simulated stream.
+        result.success(true)
     }
-    
+
     private fun disconnect() {
-        try {
-            // Close Bluetooth Serial connection
-            bluetoothAdapter?.close()
-        } catch (e: Exception) {
-            println("Disconnect error: ${e.message}")
-        }
+        // No active native session yet.
     }
-    
+
     private fun isBluetoothEnabled(result: MethodChannel.Result) {
-        val enabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            bluetoothAdapter?.isEnabled != null && bluetoothAdapter?.isEnabled!!
+        val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            bluetoothAdapter
         } else {
             @Suppress("DEPRECATION")
-            BluetoothAdapter.getDefaultAdapter() != null &&
-                    BluetoothAdapter.getDefaultAdapter()?.isEnabled ?: false
+            BluetoothAdapter.getDefaultAdapter()
         }
-        
-        result.success(enabled)
+        result.success(adapter?.isEnabled == true)
     }
-    
-    private fun checkPermissions(result: MethodChannel.Result) {
-        val granted = true // Simulated - actual implementation requires checking permissions
-        
-        if (granted) {
-            result.success(true)
-        } else {
-            result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
-        }
-    }
-    
-    private fun getConnectionStatus(result: MethodChannel.Result) {
-        val connected = false // Simulated
-        
-        result.success(connected)
-    }
-    
-    private fun getDiscoverableDevices(): List<Map<String, Any?>> {
-        return listOf() // Actual implementation would query paired devices
-    }
-    
+
     override fun onDestroy() {
         super.onDestroy()
         disconnect()
-        
-        // Unregister receiver to prevent memory leaks
-        if (receiver != null) {
-            unregisterReceiver(receiver)
+        receiver?.let {
+            unregisterReceiver(it)
             receiver = null
         }
     }
-    
-    companion object {
-        const val BLUETOOTH_STATE_CHANGE_ACTION = "android.bluetooth.adapter.action.STATE_CHANGED"
-    }
 }
-

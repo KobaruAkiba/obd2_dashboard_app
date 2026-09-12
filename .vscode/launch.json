@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OBD Monitor (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "emulator"
+    },
+    {
+      "name": "OBD Monitor (Android Emulator · Mock)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "emulator",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=mock"
+      ]
+    },
+    {
+      "name": "OBD Monitor (Android Emulator · Profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "emulator",
+      "flutterMode": "profile"
+    }
+  ]
+}

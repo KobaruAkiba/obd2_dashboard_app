@@ -33,7 +33,10 @@ fuchsia/pkg/
 # IDE & Editor files
 # =============================================================================
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/tasks.json
 *.iml
 *.ipynpcheckpoint
 *.swp

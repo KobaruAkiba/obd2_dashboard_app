@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🖥️ Run Windows Desktop App (WORKS!)",
+      "type": "shell",
+      "command": "\"E:\\HOME\\Repos\\obd_app\\.vscode\\scripts\\run.bat\"",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Clean & Rebuild",
+      "type": "shell",
+      "command": "\"E:\\HOME\\Repos\\flutter\\bin\\flutter.bat\" clean && \"E:\\HOME\\Repos\\obd_app\\.vscode\\scripts\\run.bat\"",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Install Dependencies",
+      "type": "shell",
+      "command": "\"E:\\HOME\\Repos\\flutter\\bin\\flutter.bat\" pub get",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

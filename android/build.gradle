@@ -13,5 +13,6 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-apply from: "settings.gradle.kts"
-
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

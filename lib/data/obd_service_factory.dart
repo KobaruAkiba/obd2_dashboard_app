@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart'
 
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/ble/ble_uart_obd_service.dart';
+import 'package:odb_dashboard/data/adapters/bt_serial/bt_serial_obd_service.dart';
 import 'package:odb_dashboard/data/adapters/deferred_obd_adapter.dart';
 import 'package:odb_dashboard/data/mock/mock_obd_service.dart';
 import 'package:odb_dashboard/domain/obd/obd_service.dart';
@@ -14,10 +15,13 @@ import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 ///
 /// Supported `OBD_SERVICE_TYPE` values (via `--dart-define` or env):
 /// - `mock` — simulated telemetry
-/// - `bt-serial` — Bluetooth serial stub ([DeferredObdAdapter])
-/// - `windows-can-bus` — CAN bus stub ([DeferredObdAdapter])
+/// - `bt-serial` — real Bluetooth Classic COM/ELM ([BtSerialObdService]) on
+///   Windows; [DeferredObdAdapter] elsewhere
+/// - `windows-can-bus` — CAN bus stub ([DeferredObdAdapter]) — still deferred
 /// - `ble-uart` — real BLE UART ELM327 ([BleUartObdService]) on mobile
-/// - unset / `auto` — BLE UART on non-Windows; CAN stub on Windows
+/// - unset / `auto` — [BtSerialObdService] on Windows; BLE UART on non-Windows
+///
+/// `USE_BLUETOOTH_OBD=true` forces the bt-serial path (real on Windows only).
 class ObdServiceFactory {
   static const mock = 'mock';
   static const btSerial = 'bt-serial';
@@ -84,7 +88,11 @@ class ObdServiceFactory {
       return MockObdService();
     }
 
+    // Explicit bt-serial / USE_BLUETOOTH_OBD — real COM only on Windows.
     if (wantsBluetooth || type == btSerial) {
+      if (isWindows) {
+        return BtSerialObdService();
+      }
       return DeferredObdAdapter(transport: ObdTransport.btSerial);
     }
 
@@ -93,13 +101,13 @@ class ObdServiceFactory {
     }
 
     // Real BLE UART on mobile / when explicitly requested.
-    // Windows auto stays on deferred CAN — FBP BLE on Windows is unreliable.
     if (type == bleUart || (type == auto && !isWindows)) {
       return BleUartObdService();
     }
 
+    // auto on Windows → BT serial ELM (CAN only via windows-can-bus).
     if (isWindows) {
-      return DeferredObdAdapter(transport: ObdTransport.canBus);
+      return BtSerialObdService();
     }
 
     return BleUartObdService();

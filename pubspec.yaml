@@ -1,12 +1,12 @@
 name: odb_dashboard
-description: OBD-II vehicle monitor — live dashboard with mock data and BLE ELM327 UART.
+description: OBD-II vehicle monitor — live dashboard with BLE and Windows BT-serial ELM327.
 
 publish_to: 'none'
 
 version: 1.2.0+3
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -14,6 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   flutter_blue_plus: ^1.35.5
   permission_handler: ^11.3.1
+  serial_port_win32: ^3.0.0
 
 dev_dependencies:
   flutter_test:

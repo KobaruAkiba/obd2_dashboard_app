@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:obd_car_monitor/domain/models/vehicle_data.dart';
-import 'package:obd_car_monitor/domain/obd/obd_service.dart';
-import 'package:obd_car_monitor/domain/obd/obd_transport.dart';
+import 'package:odb_dashboard/domain/models/vehicle_data.dart';
+import 'package:odb_dashboard/domain/obd/obd_service.dart';
+import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 
 /// Realistic simulated OBD stream for UI development without hardware.
 class MockObdService implements ObdService {

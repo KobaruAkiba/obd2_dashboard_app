@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:obd_car_monitor/core/theme/app_colors.dart';
+import 'package:odb_dashboard/core/theme/app_colors.dart';
 
 /// Compact gear readout (N / D / 1–7). No decorative icons.
 class GearIndicator extends StatelessWidget {

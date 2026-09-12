@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:obd_car_monitor/core/theme/app_colors.dart';
+import 'package:odb_dashboard/core/theme/app_colors.dart';
 
 /// Debug-only toggle between mock telemetry and the hardware stub path.
 class MockModeSwitch extends StatelessWidget {

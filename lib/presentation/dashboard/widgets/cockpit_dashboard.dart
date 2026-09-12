@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:obd_car_monitor/core/theme/app_colors.dart';
-import 'package:obd_car_monitor/domain/models/vehicle_data.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/gauges/arc_gauge.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/gauges/gear_indicator.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/gauges/metric_tile.dart';
+import 'package:odb_dashboard/core/theme/app_colors.dart';
+import 'package:odb_dashboard/domain/models/vehicle_data.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/gauges/arc_gauge.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/gauges/gear_indicator.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/gauges/metric_tile.dart';
 
 /// Primary OBD cockpit: dual gauges, gear, and key metrics.
 class CockpitDashboard extends StatelessWidget {

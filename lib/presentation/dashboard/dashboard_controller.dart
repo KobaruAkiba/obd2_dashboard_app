@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:obd_car_monitor/data/obd_service_factory.dart';
-import 'package:obd_car_monitor/domain/models/connection_mode.dart';
-import 'package:obd_car_monitor/domain/models/vehicle_data.dart';
-import 'package:obd_car_monitor/domain/obd/obd_service.dart';
-import 'package:obd_car_monitor/domain/obd/obd_transport.dart';
+import 'package:odb_dashboard/data/obd_service_factory.dart';
+import 'package:odb_dashboard/domain/models/connection_mode.dart';
+import 'package:odb_dashboard/domain/models/vehicle_data.dart';
+import 'package:odb_dashboard/domain/obd/obd_service.dart';
+import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 
 /// Owns connection lifecycle and feeds the cockpit UI.
 class DashboardController extends ChangeNotifier {

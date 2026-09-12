@@ -1,4 +1,4 @@
-package com.example.obd_car_monitor
+package com.example.odb_dashboard
 
 import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver

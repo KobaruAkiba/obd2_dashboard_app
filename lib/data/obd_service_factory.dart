@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform, kIsWeb, kDebugMode;
 
-import 'package:obd_car_monitor/core/logging/debug_log.dart';
-import 'package:obd_car_monitor/data/adapters/deferred_obd_adapter.dart';
-import 'package:obd_car_monitor/data/mock/mock_obd_service.dart';
-import 'package:obd_car_monitor/domain/obd/obd_service.dart';
-import 'package:obd_car_monitor/domain/obd/obd_transport.dart';
+import 'package:odb_dashboard/core/logging/debug_log.dart';
+import 'package:odb_dashboard/data/adapters/deferred_obd_adapter.dart';
+import 'package:odb_dashboard/data/mock/mock_obd_service.dart';
+import 'package:odb_dashboard/domain/obd/obd_service.dart';
+import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 
 /// Selects an [ObdService] from platform and environment configuration.
 ///

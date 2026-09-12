@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:obd_car_monitor/data/mock/mock_obd_service.dart';
-import 'package:obd_car_monitor/domain/models/vehicle_data.dart';
-import 'package:obd_car_monitor/domain/obd/obd_service.dart';
-import 'package:obd_car_monitor/domain/obd/obd_transport.dart';
+import 'package:odb_dashboard/data/mock/mock_obd_service.dart';
+import 'package:odb_dashboard/domain/models/vehicle_data.dart';
+import 'package:odb_dashboard/domain/obd/obd_service.dart';
+import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 
 /// Placeholder for real BLE / BT-serial / CAN adapters.
 ///

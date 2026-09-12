@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:obd_car_monitor/core/theme/app_theme.dart';
-import 'package:obd_car_monitor/presentation/dashboard/dashboard_screen.dart';
+import 'package:odb_dashboard/core/theme/app_theme.dart';
+import 'package:odb_dashboard/presentation/dashboard/dashboard_screen.dart';
 
 class ObdApp extends StatelessWidget {
   const ObdApp({super.key});

@@ -1,4 +1,4 @@
-name: obd_car_monitor
+name: odb_dashboard
 description: OBD-II vehicle monitor — live dashboard with mock data and hardware stubs.
 
 publish_to: 'none'

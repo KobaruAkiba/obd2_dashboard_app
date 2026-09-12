@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:obd_car_monitor/app.dart';
+import 'package:odb_dashboard/app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

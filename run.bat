@@ -51,7 +51,7 @@ if "%1" == "--release" (
     echo ╚════════════════════════════════════════════════════╝
     echo.
     echo The Windows executable is located at:
-    echo   .\build\windows\x64\runner\Debug\obd_car_monitor.exe
+    echo   .\build\windows\x64\runner\Debug\odb_dashboard.exe
     
     echo.
     echo To run the app, launch it directly or use VS Code tasks:

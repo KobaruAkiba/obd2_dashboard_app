@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:obd_car_monitor/app.dart';
+import 'package:odb_dashboard/app.dart';
 
 void main() {
   testWidgets('OBD app boots into dashboard', (tester) async {

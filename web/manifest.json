@@ -1,6 +1,6 @@
 {
-    "name": "obd_car_monitor",
-    "short_name": "obd_car_monitor",
+    "name": "odb_dashboard",
+    "short_name": "odb_dashboard",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

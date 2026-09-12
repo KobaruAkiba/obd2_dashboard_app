@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:obd_car_monitor/core/theme/app_colors.dart';
-import 'package:obd_car_monitor/presentation/connection/connection_mode_ui.dart';
-import 'package:obd_car_monitor/presentation/dashboard/dashboard_controller.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/cockpit_dashboard.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/connection_banner.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/debug_service_panel.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/dtc_alert_banner.dart';
-import 'package:obd_car_monitor/presentation/dashboard/widgets/mock_mode_switch.dart';
+import 'package:odb_dashboard/core/theme/app_colors.dart';
+import 'package:odb_dashboard/presentation/connection/connection_mode_ui.dart';
+import 'package:odb_dashboard/presentation/dashboard/dashboard_controller.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/cockpit_dashboard.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/connection_banner.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/debug_service_panel.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/dtc_alert_banner.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/mock_mode_switch.dart';
 
 /// Thin shell that binds [DashboardController] to the cockpit layout.
 class DashboardScreen extends StatefulWidget {

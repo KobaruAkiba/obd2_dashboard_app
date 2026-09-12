@@ -52,7 +52,7 @@ class DashboardController extends ChangeNotifier {
     useMock = enabled;
     switching = true;
     mode = ConnectionMode.connecting;
-    detail = enabled ? 'Switching to mock…' : 'Switching to hardware stub…';
+    detail = enabled ? 'Switching to mock…' : 'Switching to hardware…';
     _notify();
 
     try {

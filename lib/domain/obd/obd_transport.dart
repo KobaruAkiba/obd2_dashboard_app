@@ -11,7 +11,7 @@ extension ObdTransportX on ObdTransport {
   String get displayName => switch (this) {
         ObdTransport.mock => 'Mock data',
         ObdTransport.btSerial => 'Bluetooth serial (stub)',
-        ObdTransport.bleUart => 'BLE UART (stub)',
+        ObdTransport.bleUart => 'BLE UART',
         ObdTransport.canBus => 'CAN bus (stub)',
       };
 }

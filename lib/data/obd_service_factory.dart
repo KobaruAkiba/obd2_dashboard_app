@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform, kIsWeb, kDebugMode;
 
 import 'package:odb_dashboard/core/logging/debug_log.dart';
+import 'package:odb_dashboard/data/adapters/ble/ble_uart_obd_service.dart';
 import 'package:odb_dashboard/data/adapters/deferred_obd_adapter.dart';
 import 'package:odb_dashboard/data/mock/mock_obd_service.dart';
 import 'package:odb_dashboard/domain/obd/obd_service.dart';
@@ -13,10 +14,10 @@ import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 ///
 /// Supported `OBD_SERVICE_TYPE` values (via `--dart-define` or env):
 /// - `mock` — simulated telemetry
-/// - `bt-serial` — Bluetooth serial stub
-/// - `windows-can-bus` — CAN bus stub
-/// - `ble-uart` — mobile BLE stub
-/// - unset / `auto` — platform hardware stub (mock is a debug UI switch)
+/// - `bt-serial` — Bluetooth serial stub ([DeferredObdAdapter])
+/// - `windows-can-bus` — CAN bus stub ([DeferredObdAdapter])
+/// - `ble-uart` — real BLE UART ELM327 ([BleUartObdService]) on mobile
+/// - unset / `auto` — BLE UART on non-Windows; CAN stub on Windows
 class ObdServiceFactory {
   static const mock = 'mock';
   static const btSerial = 'bt-serial';
@@ -91,15 +92,17 @@ class ObdServiceFactory {
       return DeferredObdAdapter(transport: ObdTransport.canBus);
     }
 
-    if (type == bleUart || !isWindows) {
-      return DeferredObdAdapter(transport: ObdTransport.bleUart);
+    // Real BLE UART on mobile / when explicitly requested.
+    // Windows auto stays on deferred CAN — FBP BLE on Windows is unreliable.
+    if (type == bleUart || (type == auto && !isWindows)) {
+      return BleUartObdService();
     }
 
     if (isWindows) {
       return DeferredObdAdapter(transport: ObdTransport.canBus);
     }
 
-    return DeferredObdAdapter(transport: ObdTransport.bleUart);
+    return BleUartObdService();
   }
 
   static Map<String, dynamic> getServiceStatus() {

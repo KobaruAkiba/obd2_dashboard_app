@@ -1,5 +1,5 @@
 name: odb_dashboard
-description: OBD-II vehicle monitor — live dashboard with mock data and hardware stubs.
+description: OBD-II vehicle monitor — live dashboard with mock data and BLE ELM327 UART.
 
 publish_to: 'none'
 
@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+  flutter_blue_plus: ^1.35.5
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

@@ -8,25 +8,49 @@ Flutter app for live **OBD-II vehicle telemetry**. Dark cockpit UI with RPM/spee
 |-------|---------|
 | UI dashboard | Working |
 | Mock data stream | Working (debug switch on dashboard) |
-| Bluetooth / CAN / BLE | Deferred adapters behind `ObdService` — not real I/O yet |
+| BLE UART (ELM327) | Real adapter on Android/iOS (`BleUartObdService`) |
+| Bluetooth Classic / CAN | Still deferred stubs (`DeferredObdAdapter`) |
+
+## BLE vs CAN
+
+BLE UART talks to an **ELM327-class dongle** over Nordic UART (GATT). The app sends AT + Mode 01 PID commands; the dongle speaks to the vehicle bus (often CAN under the hood). That is **not** the same as the Windows USB-CAN path (`windows-can-bus`), which would read native CAN frames via PCAN/Kvaser without ELM.
 
 ## Run
 
 ```bash
 flutter pub get
-flutter run -d windows    # or chrome / android device
+flutter run -d android   # or ios / windows / chrome
+```
+
+### BLE UART (mobile)
+
+```bash
+flutter run -d android --dart-define=OBD_SERVICE_TYPE=ble-uart
+# or leave unset / auto on non-Windows — factory selects BleUartObdService
+```
+
+Grant Bluetooth (and location on Android for scanning) when prompted. Connect failure surfaces an error state — the app does **not** silently fall back to mock.
+
+### Windows limitation
+
+`auto` on Windows still selects the CAN stub. `ble-uart` can be forced, but `flutter_blue_plus` BLE support on Windows is immature; prefer Android/iOS for real dongles. Use the debug **Mock data** switch when you have no hardware.
+
+```bash
+flutter run -d windows --dart-define=OBD_SERVICE_TYPE=mock
+flutter run -d windows --dart-define=OBD_SERVICE_TYPE=windows-can-bus
+flutter run -d windows --dart-define=OBD_SERVICE_TYPE=bt-serial
 ```
 
 ## Service selection
 
-By default the app starts on the platform hardware stub. In **debug** builds, use the **Mock data** switch on the dashboard for simulated telemetry.
+By default the app starts on the platform hardware path. In **debug** builds, use the **Mock data** switch on the dashboard for simulated telemetry.
 
 ```bash
-flutter run                                              # auto / hardware stub
-flutter run --dart-define=OBD_SERVICE_TYPE=mock          # mock on at start
+flutter run                                              # auto
+flutter run --dart-define=OBD_SERVICE_TYPE=mock
+flutter run --dart-define=OBD_SERVICE_TYPE=ble-uart
 flutter run --dart-define=OBD_SERVICE_TYPE=bt-serial
 flutter run --dart-define=OBD_SERVICE_TYPE=windows-can-bus
-flutter run --dart-define=OBD_SERVICE_TYPE=ble-uart
 ```
 
 Supported values: `mock`, `bt-serial`, `windows-can-bus`, `ble-uart`, `auto`.
@@ -37,8 +61,8 @@ Supported values: `mock`, `bt-serial`, `windows-can-bus`, `ble-uart`, `auto`.
 lib/
   main.dart / app.dart
   core/          # theme, debugLog
-  domain/        # VehicleData, ConnectionMode, ObdService, ObdTransport, PidParser
-  data/          # ObdServiceFactory, MockObdService, DeferredObdAdapter
+  domain/        # VehicleData, ObdService, PidParser, elm327/
+  data/          # ObdServiceFactory, MockObdService, adapters/ble/, DeferredObdAdapter
   presentation/  # dashboard screen/controller + cockpit widgets
 ```
 
@@ -60,9 +84,9 @@ Every data source implements `ObdService`: `displayName`, `transport` (`ObdTrans
 
 | Platform | Path | Typical hardware |
 |----------|------|------------------|
-| Windows | USB-CAN | PCAN-USB, Kvaser |
-| Windows | Bluetooth Classic (SPS/COM) | Vgate / ELM327 |
-| Android / iOS | BLE UART | BLE OBD dongles |
+| Android / iOS | BLE UART | ELM327 BLE / Vgate / similar NUS dongles |
+| Windows | USB-CAN (stub) | PCAN-USB, Kvaser |
+| Windows | Bluetooth Classic (stub) | Vgate / ELM327 SPS/COM |
 
 ## Development
 
@@ -73,7 +97,7 @@ flutter test
 
 ## Roadmap
 
-- Wire real ELM327 Bluetooth serial / BLE UART
 - Optional Windows CAN (PCAN/Kvaser) via FFI
+- Bluetooth Classic serial (ELM) on Windows
 - Session history + CSV export
 - Settings screen (units, redline, connection prefs)

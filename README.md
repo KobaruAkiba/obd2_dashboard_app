@@ -6,17 +6,17 @@ Flutter app for live **OBD-II vehicle telemetry**. Dark cockpit UI with RPM/spee
 
 | Layer | Reality |
 |-------|---------|
-| UI dashboard | Working |
+| UI dashboard | Working (notify throttled ~20 Hz; gauges in `RepaintBoundary`) |
 | Mock data stream | Working (debug switch on dashboard) |
 | BLE UART (ELM327) | Real adapter on Android/iOS (`BleUartObdService`) |
 | Bluetooth Classic serial (Windows) | Real COM/ELM adapter (`BtSerialObdService`) |
-| Windows USB-CAN | Still deferred stub (`DeferredObdAdapter`) |
+| Windows USB-CAN | Real PCAN + ISO-TP (`CanBusObdService`) when `windows-can-bus` |
 
 ## BLE vs BT-serial vs CAN
 
 - **BLE UART**: radio GATT to an ELM327-class dongle (Nordic UART). AT + Mode 01 PIDs; the dongle talks to the vehicle bus.
 - **BT serial (Windows)**: Bluetooth Classic SPP after OS pairing → virtual COM port → same ELM AT/PID session.
-- **CAN (`windows-can-bus`)**: native USB-CAN frames (PCAN/Kvaser) — **not** implemented yet; still a stub. That path does not use ELM.
+- **CAN (`windows-can-bus`)**: native USB-CAN frames via **PCAN-Basic** (`PCANBasic.dll`) → ISO-TP (0x7E0/0x7E8) → Mode 01. No ELM.
 
 ## Run
 
@@ -54,11 +54,20 @@ flutter run -d windows
 
 If no COM candidate is found, connect fails with a clear error — no silent mock.
 
-### Windows CAN (still stub)
+### Windows CAN (PCAN)
+
+Requires [PEAK PCAN-Basic](https://www.peak-system.com/PCAN-Basic.239.0.html) drivers so `PCANBasic.dll` is loadable (PATH or app directory). Default channel `PCAN_USBBUS1` (`0x51`), bitrate **500 kbit/s** (`PCAN_BAUD_500K`).
 
 ```bash
 flutter run -d windows --dart-define=OBD_SERVICE_TYPE=windows-can-bus
+
+# optional overrides
+flutter run -d windows --dart-define=OBD_SERVICE_TYPE=windows-can-bus --dart-define=OBD_CAN_CHANNEL=PCAN_USBBUS1 --dart-define=OBD_CAN_BITRATE=500000
 ```
+
+If the DLL is missing or `CAN_Initialize` fails, connect errors clearly — **no** silent mock. On non-Windows, `windows-can-bus` uses `DeferredObdAdapter`. Unit tests inject `FakeCanDriver` (no DLL).
+
+RX is pumped via a dedicated timer/`CanReaderIsolate` helper (Isolate.spawn when feasible; local pump is the reliable Windows FFI path). `vehicleData` and UI notifies are capped at **20 Hz** (50 ms); latest snapshot is always kept.
 
 ## Service selection
 
@@ -80,8 +89,9 @@ Supported values: `mock`, `bt-serial`, `windows-can-bus`, `ble-uart`, `auto`.
 lib/
   main.dart / app.dart
   core/          # theme, debugLog
-  domain/        # VehicleData, ObdService, PidParser, elm327/
-  data/          # ObdServiceFactory, MockObdService, adapters/ble/, adapters/bt_serial/, DeferredObdAdapter
+  domain/        # VehicleData, ObdService, PidParser, elm327/, isotp/
+  data/          # ObdServiceFactory, MockObdService,
+                 # adapters/ble/, bt_serial/, can/ (PCAN FFI + ISO-TP session)
   presentation/  # dashboard screen/controller + cockpit widgets
 ```
 
@@ -105,7 +115,7 @@ Every data source implements `ObdService`: `displayName`, `transport` (`ObdTrans
 |----------|------|------------------|
 | Android / iOS | BLE UART | ELM327 BLE / Vgate / similar NUS dongles |
 | Windows | Bluetooth Classic serial | Vgate / ELM327 SPP → COMx |
-| Windows | USB-CAN (stub) | PCAN-USB, Kvaser |
+| Windows | USB-CAN | PCAN-USB (`PCANBasic.dll`, ISO-TP 0x7E0/0x7E8) |
 
 ## Development
 
@@ -116,6 +126,6 @@ flutter test
 
 ## Roadmap
 
-- Optional Windows CAN (PCAN/Kvaser) via FFI
+- Optional Kvaser / SocketCAN drivers behind `CanBusDriver`
 - Session history + CSV export
 - Settings screen (units, redline, connection prefs)

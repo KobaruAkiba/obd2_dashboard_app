@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart'
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/ble/ble_uart_obd_service.dart';
 import 'package:odb_dashboard/data/adapters/bt_serial/bt_serial_obd_service.dart';
+import 'package:odb_dashboard/data/adapters/can/can_bus_obd_service.dart';
 import 'package:odb_dashboard/data/adapters/deferred_obd_adapter.dart';
 import 'package:odb_dashboard/data/mock/mock_obd_service.dart';
 import 'package:odb_dashboard/domain/obd/obd_service.dart';
@@ -17,7 +18,8 @@ import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 /// - `mock` — simulated telemetry
 /// - `bt-serial` — real Bluetooth Classic COM/ELM ([BtSerialObdService]) on
 ///   Windows; [DeferredObdAdapter] elsewhere
-/// - `windows-can-bus` — CAN bus stub ([DeferredObdAdapter]) — still deferred
+/// - `windows-can-bus` — real PCAN ISO-TP ([CanBusObdService]) on Windows;
+///   [DeferredObdAdapter] elsewhere
 /// - `ble-uart` — real BLE UART ELM327 ([BleUartObdService]) on mobile
 /// - unset / `auto` — [BtSerialObdService] on Windows; BLE UART on non-Windows
 ///
@@ -97,6 +99,9 @@ class ObdServiceFactory {
     }
 
     if (type == windowsCanBus) {
+      if (isWindows) {
+        return CanBusObdService();
+      }
       return DeferredObdAdapter(transport: ObdTransport.canBus);
     }
 

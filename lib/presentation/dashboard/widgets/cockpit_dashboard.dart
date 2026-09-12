@@ -50,21 +50,25 @@ class CockpitDashboard extends StatelessWidget {
             );
 
             if (constraints.maxWidth >= 520) {
-              return Row(
-                children: [
-                  Expanded(child: rpmGauge),
-                  const SizedBox(width: 12),
-                  Expanded(child: speedGauge),
-                ],
+              return RepaintBoundary(
+                child: Row(
+                  children: [
+                    Expanded(child: rpmGauge),
+                    const SizedBox(width: 12),
+                    Expanded(child: speedGauge),
+                  ],
+                ),
               );
             }
 
-            return Column(
-              children: [
-                rpmGauge,
-                const SizedBox(height: 12),
-                speedGauge,
-              ],
+            return RepaintBoundary(
+              child: Column(
+                children: [
+                  rpmGauge,
+                  const SizedBox(height: 12),
+                  speedGauge,
+                ],
+              ),
             );
           },
         ),

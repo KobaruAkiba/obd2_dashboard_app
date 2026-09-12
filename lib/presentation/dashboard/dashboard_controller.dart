@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:odb_dashboard/data/adapters/can/can_config.dart';
 import 'package:odb_dashboard/data/obd_service_factory.dart';
 import 'package:odb_dashboard/domain/models/connection_mode.dart';
 import 'package:odb_dashboard/domain/models/vehicle_data.dart';
@@ -9,7 +10,17 @@ import 'package:odb_dashboard/domain/obd/obd_service.dart';
 import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 
 /// Owns connection lifecycle and feeds the cockpit UI.
+///
+/// [notifyListeners] for telemetry is throttled to ~20 Hz
+/// ([CanConfig.uiSampleInterval]); [data] always holds the latest sample.
 class DashboardController extends ChangeNotifier {
+  DashboardController({
+    this.uiNotifyInterval = CanConfig.uiSampleInterval,
+  });
+
+  /// Minimum gap between UI notifications driven by vehicle data.
+  final Duration uiNotifyInterval;
+
   ObdService? _service;
   StreamSubscription<VehicleData>? _dataSub;
   StreamSubscription<ObdConnectionState>? _stateSub;
@@ -25,13 +36,20 @@ class DashboardController extends ChangeNotifier {
   bool useMock = false;
   bool switching = false;
 
+  DateTime? _lastUiNotify;
+  bool _pendingUiNotify = false;
+  Timer? _uiThrottleTimer;
+
+  /// Debug: coalesced UI notify calls (latest [data] still applied).
+  int droppedUiUpdates = 0;
+
   Future<void> bootstrap() async {
     // Mock is opt-in via the debug switch (or explicit OBD_SERVICE_TYPE=mock).
     useMock = kDebugMode && ObdServiceFactory.preferMock;
     serviceInfo = ObdServiceFactory.getServiceStatus();
     mode = ConnectionMode.connecting;
     detail = 'Selecting data source…';
-    _notify();
+    _notifyImmediate();
 
     try {
       final service = await ObdServiceFactory.createService(useMock: useMock);
@@ -42,7 +60,7 @@ class DashboardController extends ChangeNotifier {
       detail = kDebugMode
           ? 'Could not start service. Enable mock to continue.'
           : 'Could not start OBD service.';
-      _notify();
+      _notifyImmediate();
     }
   }
 
@@ -53,7 +71,7 @@ class DashboardController extends ChangeNotifier {
     switching = true;
     mode = ConnectionMode.connecting;
     detail = enabled ? 'Switching to mock…' : 'Switching to hardware…';
-    _notify();
+    _notifyImmediate();
 
     try {
       final service = await ObdServiceFactory.createService(useMock: enabled);
@@ -62,11 +80,11 @@ class DashboardController extends ChangeNotifier {
       if (_disposed) return;
       mode = ConnectionMode.error;
       detail = 'Failed to switch data source';
-      _notify();
+      _notifyImmediate();
     } finally {
       if (!_disposed) {
         switching = false;
-        _notify();
+        _notifyImmediate();
       }
     }
   }
@@ -82,7 +100,7 @@ class DashboardController extends ChangeNotifier {
       if (_disposed) return;
       data = incoming;
       lastUpdate = DateTime.now();
-      _notify();
+      _notifyThrottled();
     });
 
     await service.connect();
@@ -91,7 +109,7 @@ class DashboardController extends ChangeNotifier {
     mode = _modeFor(service);
     detail = service.displayName;
     serviceInfo = ObdServiceFactory.getServiceStatus();
-    _notify();
+    _notifyImmediate();
   }
 
   ConnectionMode _modeFor(ObdService service) {
@@ -120,7 +138,7 @@ class DashboardController extends ChangeNotifier {
         mode = ConnectionMode.disconnected;
         detail = 'Disconnected';
     }
-    _notify();
+    _notifyImmediate();
   }
 
   String formatLastUpdate() {
@@ -132,13 +150,52 @@ class DashboardController extends ChangeNotifier {
     return 'Updated ${diff.inMinutes}m ago';
   }
 
-  void _notify() {
-    if (!_disposed) notifyListeners();
+  /// Connection / mode changes notify immediately.
+  void _notifyImmediate() {
+    if (_disposed) return;
+    _pendingUiNotify = false;
+    _lastUiNotify = DateTime.now();
+    notifyListeners();
+  }
+
+  /// Telemetry updates: keep latest [data], notify at most ~20 Hz.
+  void _notifyThrottled() {
+    if (_disposed) return;
+    final now = DateTime.now();
+    final last = _lastUiNotify;
+    if (last == null || now.difference(last) >= uiNotifyInterval) {
+      _lastUiNotify = now;
+      _pendingUiNotify = false;
+      notifyListeners();
+      return;
+    }
+
+    _pendingUiNotify = true;
+    if (kDebugMode) {
+      droppedUiUpdates++;
+    }
+    _uiThrottleTimer ??= Timer(uiNotifyInterval - now.difference(last), () {
+      _uiThrottleTimer = null;
+      if (_disposed || !_pendingUiNotify) return;
+      _pendingUiNotify = false;
+      _lastUiNotify = DateTime.now();
+      notifyListeners();
+    });
+  }
+
+  /// Test helper: apply a data sample through the same throttle path as the stream.
+  @visibleForTesting
+  void debugApplyVehicleData(VehicleData incoming) {
+    if (_disposed) return;
+    data = incoming;
+    lastUpdate = DateTime.now();
+    _notifyThrottled();
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _uiThrottleTimer?.cancel();
     _dataSub?.cancel();
     _stateSub?.cancel();
     _service?.dispose();

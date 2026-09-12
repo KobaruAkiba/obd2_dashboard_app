@@ -11,6 +11,9 @@ import 'package:odb_dashboard/presentation/dashboard/widgets/dtc_alert_banner.da
 import 'package:odb_dashboard/presentation/dashboard/widgets/mock_mode_switch.dart';
 
 /// Thin shell that binds [DashboardController] to the cockpit layout.
+///
+/// Connection chrome and cockpit gauges use separate [ListenableBuilder]s so
+/// high-rate telemetry rebuilds do not rebuild the whole scaffold.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -35,76 +38,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        final c = _controller;
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('OBD Monitor'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Chip(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('OBD Monitor'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) {
+                final c = _controller;
+                return Chip(
                   avatar: Icon(c.mode.icon, size: 16, color: c.mode.color),
                   label: Text(c.mode.label),
-                ),
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              children: [
-                if (kDebugMode) ...[
-                  MockModeSwitch(
-                    value: c.useMock,
-                    enabled: !c.switching,
-                    onChanged: c.onMockChanged,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                ConnectionBanner(
-                  mode: c.mode,
-                  detail: c.detail,
-                ),
-                const SizedBox(height: 20),
-                CockpitDashboard(data: c.data),
-                const SizedBox(height: 16),
-                DtcAlertBanner(codes: c.data.dtcs),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.schedule, size: 14, color: AppColors.muted),
-                    const SizedBox(width: 6),
-                    Text(
-                      c.formatLastUpdate(),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const Spacer(),
-                    Flexible(
-                      child: Text(
-                        c.data.rpm != null ? c.data.statusSummary : '',
-                        style: Theme.of(context).textTheme.labelSmall,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ],
-                ),
-                if (kDebugMode) ...[
-                  const SizedBox(height: 20),
-                  DebugServicePanel(
-                    info: c.serviceInfo,
-                    mode: c.mode,
-                    useMock: c.useMock,
-                  ),
-                ],
-              ],
+                );
+              },
             ),
           ),
-        );
-      },
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            // Connection / debug shell — rebuilds on mode & service changes.
+            ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) {
+                final c = _controller;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (kDebugMode) ...[
+                      MockModeSwitch(
+                        value: c.useMock,
+                        enabled: !c.switching,
+                        onChanged: c.onMockChanged,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    ConnectionBanner(
+                      mode: c.mode,
+                      detail: c.detail,
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            // Cockpit data — throttled ~20 Hz via controller.
+            ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) {
+                final c = _controller;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CockpitDashboard(data: c.data),
+                    const SizedBox(height: 16),
+                    DtcAlertBanner(codes: c.data.dtcs),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.schedule,
+                          size: 14,
+                          color: AppColors.muted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          c.formatLastUpdate(),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const Spacer(),
+                        Flexible(
+                          child: Text(
+                            c.data.rpm != null ? c.data.statusSummary : '',
+                            style: Theme.of(context).textTheme.labelSmall,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (kDebugMode) ...[
+                      const SizedBox(height: 20),
+                      DebugServicePanel(
+                        info: c.serviceInfo,
+                        mode: c.mode,
+                        useMock: c.useMock,
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

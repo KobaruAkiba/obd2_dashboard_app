@@ -12,6 +12,6 @@ extension ObdTransportX on ObdTransport {
         ObdTransport.mock => 'Mock data',
         ObdTransport.btSerial => 'Bluetooth serial',
         ObdTransport.bleUart => 'BLE UART',
-        ObdTransport.canBus => 'CAN bus (stub)',
+        ObdTransport.canBus => 'CAN bus',
       };
 }

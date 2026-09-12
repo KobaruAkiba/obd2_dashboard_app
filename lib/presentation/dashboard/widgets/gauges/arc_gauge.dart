@@ -1,8 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-
-import '../../theme/app_theme.dart';
+import 'package:obd_car_monitor/core/theme/app_colors.dart';
 
 /// Semi-circular arc gauge for RPM / speed readouts.
 class ArcGauge extends StatelessWidget {

@@ -1,8 +1,6 @@
 # OBD Monitor
 
-Flutter app for live **OBD-II vehicle telemetry**. Dark cockpit UI with RPM/speed gauges, temperatures, battery, throttle, fuel, and DTC alerts.
-
-All processing stays on-device — no telemetry is sent to servers.
+Flutter app for live **OBD-II vehicle telemetry**. Dark cockpit UI with RPM/speed gauges, temperatures, battery, throttle, fuel, and DTC alerts. All processing stays on-device — no telemetry is sent to servers.
 
 ## Current status
 
@@ -10,9 +8,7 @@ All processing stays on-device — no telemetry is sent to servers.
 |-------|---------|
 | UI dashboard | Working |
 | Mock data stream | Working (debug switch on dashboard) |
-| Bluetooth / CAN / BLE | **Stubs** behind `ObdService` — not real adapter I/O yet |
-
-The project is structured so real adapters can replace stubs without rewriting the UI.
+| Bluetooth / CAN / BLE | Deferred adapters behind `ObdService` — not real I/O yet |
 
 ## Run
 
@@ -21,47 +17,36 @@ flutter pub get
 flutter run -d windows    # or chrome / android device
 ```
 
-### Service selection
+## Service selection
 
-By default the app starts on the platform hardware stub. In **debug** builds, use the **Mock data** switch on the dashboard to enable simulated telemetry.
-
-Force a source with `--dart-define` (preferred) or `OBD_SERVICE_TYPE`:
+By default the app starts on the platform hardware stub. In **debug** builds, use the **Mock data** switch on the dashboard for simulated telemetry.
 
 ```bash
-# Default — hardware stub; toggle mock from the debug UI
-flutter run
-
-# Start with mock already on (debug switch starts enabled)
-flutter run --dart-define=OBD_SERVICE_TYPE=mock
-
-# Hardware stubs (same UI path as future real adapters)
+flutter run                                              # auto / hardware stub
+flutter run --dart-define=OBD_SERVICE_TYPE=mock          # mock on at start
 flutter run --dart-define=OBD_SERVICE_TYPE=bt-serial
 flutter run --dart-define=OBD_SERVICE_TYPE=windows-can-bus
 flutter run --dart-define=OBD_SERVICE_TYPE=ble-uart
 ```
 
-Aliases also accepted: `mock-windows`, `mock-mobile`, `windows-bluetooth-serial`, `can-bus`.
+Supported values: `mock`, `bt-serial`, `windows-can-bus`, `ble-uart`, `auto`.
 
 ## Architecture
 
 ```
 lib/
-  main.dart / app.dart          # entry + theme shell
-  theme/                        # dark cockpit ThemeData
-  models/                       # VehicleData, ConnectionMode
-  obd/pid_parser.dart           # SAE J1979 Mode 01 formulas
-  services/
-    obd_service.dart            # interface
-    mock_obd_service.dart       # working simulated source
-    stub_hardware_obd_service.dart
-    service_router.dart         # selects implementation
-  screens/dashboard_screen.dart # connection + layout
-  widgets/                      # cockpit, gauges, banners
+  main.dart / app.dart
+  core/          # theme, debugLog
+  domain/        # VehicleData, ConnectionMode, ObdService, ObdTransport, PidParser
+  data/          # ObdServiceFactory, MockObdService, DeferredObdAdapter
+  presentation/  # dashboard screen/controller + cockpit widgets
 ```
 
-All data sources implement `ObdService` and emit `Stream<VehicleData>` in engineering units (°C, km/h, RPM, %, V).
+## ObdService contract
 
-### PIDs used by the parser
+Every data source implements `ObdService`: `displayName`, `transport` (`ObdTransport`), `Stream<VehicleData>`, `Stream<ObdConnectionState>`, plus `connect` / `disconnect` / `dispose`. Values are engineering units (°C, km/h, RPM, %, V).
+
+## PIDs supported
 
 | PID | Metric | Formula |
 |-----|--------|---------|
@@ -71,17 +56,20 @@ All data sources implement `ObdService` and emit `Stream<VehicleData>` in engine
 | 0x04 / 0x11 / 0x2F | Load / throttle / fuel | `A×100/255` % |
 | 0x42 | Module voltage | `((A×256)+B)/1000` V |
 
-## Target hardware (not wired yet)
-
-Planned adapters for when stubs are replaced:
+## Target hardware
 
 | Platform | Path | Typical hardware |
 |----------|------|------------------|
 | Windows | USB-CAN | PCAN-USB, Kvaser |
-| Windows | Bluetooth Classic (SPS/COM) | Vgate / ELM327 with serial profile |
-| Android / iOS | BLE UART | Soleilx-style and similar BLE OBD dongles |
+| Windows | Bluetooth Classic (SPS/COM) | Vgate / ELM327 |
+| Android / iOS | BLE UART | BLE OBD dongles |
 
-Budget BT Classic dongles on Windows need a virtual COM port after pairing (Device Manager → Ports). Pure BLE-only dongles are a mobile path, not Windows Classic SPS.
+## Development
+
+```bash
+flutter analyze
+flutter test
+```
 
 ## Roadmap
 

@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:obd_car_monitor/core/theme/app_colors.dart';
+import 'package:obd_car_monitor/domain/models/connection_mode.dart';
 
-/// High-level connection mode shown in the UI.
-enum ConnectionMode {
-  disconnected,
-  connecting,
-  mock,
-  bluetooth,
-  canBus,
-  error,
-}
-
-extension ConnectionModeX on ConnectionMode {
+extension ConnectionModeUi on ConnectionMode {
   String get label => switch (this) {
         ConnectionMode.disconnected => 'Disconnected',
         ConnectionMode.connecting => 'Connecting…',

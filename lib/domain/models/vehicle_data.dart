@@ -97,17 +97,3 @@ class VehicleData {
     return 0;
   }
 }
-
-class DtcEntry {
-  final String code;
-  final String description;
-  final int severity;
-  final DateTime detectedAt;
-
-  DtcEntry({
-    required this.code,
-    required this.description,
-    required this.severity,
-    DateTime? detectedAt,
-  }) : detectedAt = detectedAt ?? DateTime.now();
-}

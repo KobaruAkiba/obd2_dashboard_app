@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../../models/connection_status.dart';
-import '../../theme/app_theme.dart';
+import 'package:obd_car_monitor/core/theme/app_colors.dart';
+import 'package:obd_car_monitor/domain/models/connection_mode.dart';
+import 'package:obd_car_monitor/presentation/connection/connection_mode_ui.dart';
 
 class ConnectionBanner extends StatelessWidget {
   const ConnectionBanner({

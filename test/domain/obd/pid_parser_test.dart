@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:obd_car_monitor/obd/pid_parser.dart';
+import 'package:obd_car_monitor/domain/obd/pid_parser.dart';
 
 void main() {
   group('PidParser SAE J1979', () {

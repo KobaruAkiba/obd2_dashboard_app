@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:odb_dashboard/core/connection/connection_error_service.dart';
 import 'package:odb_dashboard/data/adapters/can/can_config.dart';
 import 'package:odb_dashboard/data/obd_service_factory.dart';
 import 'package:odb_dashboard/domain/models/connection_mode.dart';
@@ -16,15 +17,22 @@ import 'package:odb_dashboard/domain/obd/obd_transport.dart';
 class DashboardController extends ChangeNotifier {
   DashboardController({
     this.uiNotifyInterval = CanConfig.uiSampleInterval,
-  });
+    ConnectionErrorService connectionErrors = const ConnectionErrorService(),
+  }) : _connectionErrors = connectionErrors;
 
   /// Minimum gap between UI notifications driven by vehicle data.
   final Duration uiNotifyInterval;
+
+  final ConnectionErrorService _connectionErrors;
 
   ObdService? _service;
   StreamSubscription<VehicleData>? _dataSub;
   StreamSubscription<ObdConnectionState>? _stateSub;
   bool _disposed = false;
+
+  /// Last mapped connect failure; used when [ObdConnectionState.error] arrives
+  /// before the [connect] catch runs (stream emits error then rethrows).
+  String? _lastErrorDetail;
 
   VehicleData data = const VehicleData();
   DateTime? lastUpdate;
@@ -54,13 +62,9 @@ class DashboardController extends ChangeNotifier {
     try {
       final service = await ObdServiceFactory.createService(useMock: useMock);
       await _attachService(service);
-    } catch (_) {
+    } on Object catch (e) {
       if (_disposed) return;
-      mode = ConnectionMode.error;
-      detail = kDebugMode
-          ? 'Could not start service. Enable mock to continue.'
-          : 'Could not start OBD service.';
-      _notifyImmediate();
+      _applyConnectionError(e, transport: _service?.transport);
     }
   }
 
@@ -76,11 +80,9 @@ class DashboardController extends ChangeNotifier {
     try {
       final service = await ObdServiceFactory.createService(useMock: enabled);
       await _attachService(service);
-    } catch (_) {
+    } on Object catch (e) {
       if (_disposed) return;
-      mode = ConnectionMode.error;
-      detail = 'Failed to switch data source';
-      _notifyImmediate();
+      _applyConnectionError(e, transport: _service?.transport);
     } finally {
       if (!_disposed) {
         switching = false;
@@ -94,6 +96,7 @@ class DashboardController extends ChangeNotifier {
     await _stateSub?.cancel();
     _service?.dispose();
 
+    _lastErrorDetail = null;
     _service = service;
     _stateSub = service.connectionState.listen(_onConnectionState);
     _dataSub = service.vehicleData.listen((incoming) {
@@ -103,12 +106,27 @@ class DashboardController extends ChangeNotifier {
       _notifyThrottled();
     });
 
-    await service.connect();
+    try {
+      await service.connect();
+    } on Object catch (e) {
+      if (_disposed) return;
+      _applyConnectionError(e, transport: service.transport);
+      return;
+    }
     if (_disposed) return;
 
+    _lastErrorDetail = null;
     mode = _modeFor(service);
     detail = service.displayName;
     serviceInfo = ObdServiceFactory.getServiceStatus();
+    _notifyImmediate();
+  }
+
+  void _applyConnectionError(Object error, {ObdTransport? transport}) {
+    final message = _connectionErrors.userMessage(error, transport: transport);
+    _lastErrorDetail = message;
+    mode = ConnectionMode.error;
+    detail = message;
     _notifyImmediate();
   }
 
@@ -127,13 +145,17 @@ class DashboardController extends ChangeNotifier {
         mode = ConnectionMode.connecting;
         detail = 'Connecting to ${_service?.displayName ?? 'device'}…';
       case ObdConnectionState.connected:
+        _lastErrorDetail = null;
         if (_service != null) {
           mode = _modeFor(_service!);
           detail = _service!.displayName;
         }
       case ObdConnectionState.error:
         mode = ConnectionMode.error;
-        detail = 'Connection error';
+        // Prefer the mapped text from the connect catch when available;
+        // otherwise show a transport-specific fallback (stream emits first).
+        detail = _lastErrorDetail ??
+            _connectionErrors.fallbackMessage(transport: _service?.transport);
       case ObdConnectionState.disconnected:
         mode = ConnectionMode.disconnected;
         detail = 'Disconnected';

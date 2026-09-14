@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/ble/ble_device_filter.dart';
 import 'package:odb_dashboard/domain/obd/elm327/elm327_client.dart';
@@ -36,7 +37,9 @@ class BleUartLink implements Elm327Uart {
     if (_open) return;
 
     if (await FlutterBluePlus.isSupported == false) {
-      throw StateError('Bluetooth LE is not supported on this device');
+      throw StateError(
+        '${ConnectionErrorMarkers.bleNotSupported} on this device',
+      );
     }
 
     final adapterState = await FlutterBluePlus.adapterState
@@ -44,7 +47,9 @@ class BleUartLink implements Elm327Uart {
         .first
         .timeout(const Duration(seconds: 5));
     if (adapterState != BluetoothAdapterState.on) {
-      throw StateError('Bluetooth is off — turn it on and retry');
+      throw StateError(
+        '${ConnectionErrorMarkers.bluetoothOff} — turn it on and retry',
+      );
     }
 
     final device = await _scanForDevice();
@@ -61,7 +66,9 @@ class BleUartLink implements Elm327Uart {
     if (pair == null) {
       await device.disconnect();
       _device = null;
-      throw StateError('No UART RX/TX characteristics found on device');
+      throw StateError(
+        '${ConnectionErrorMarkers.noUartRxTx} characteristics found on device',
+      );
     }
 
     _rx = pair.rx;
@@ -164,7 +171,9 @@ class BleUartLink implements Elm327Uart {
             );
             return all.first.device;
           }
-          throw StateError('No BLE devices found during scan');
+          throw StateError(
+            '${ConnectionErrorMarkers.noBleDevices} during scan',
+          );
         },
       );
       return device;

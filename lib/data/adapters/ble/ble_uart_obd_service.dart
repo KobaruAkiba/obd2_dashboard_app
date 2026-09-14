@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/ble/ble_permissions.dart';
 import 'package:odb_dashboard/data/adapters/ble/ble_uart_link.dart';
@@ -50,7 +51,7 @@ class BleUartObdService implements ObdService {
     try {
       final ok = await BlePermissions.ensure();
       if (!ok) {
-        throw StateError('Bluetooth permissions denied');
+        throw StateError(ConnectionErrorMarkers.blePermissionsDenied);
       }
 
       await _link.open();

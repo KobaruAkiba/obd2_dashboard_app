@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:serial_port_win32/serial_port_win32.dart';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/bt_serial/bt_serial_config.dart';
 import 'package:odb_dashboard/data/adapters/bt_serial/bt_serial_port_resolver.dart';
@@ -46,7 +47,7 @@ class BtSerialLink implements Elm327Uart {
 
     if (kIsWeb || !Platform.isWindows) {
       throw StateError(
-        'BT serial (COM) is only supported on Windows. '
+        'BT serial (COM) is ${ConnectionErrorMarkers.btSerialWindowsOnly}. '
         'Use ble-uart on Android/iOS, or mock for UI development.',
       );
     }
@@ -73,14 +74,16 @@ class BtSerialLink implements Elm327Uart {
   Future<void> write(List<int> data) async {
     final port = _port;
     if (!_open || port == null) {
-      throw StateError('BT serial COM not open');
+      throw StateError(ConnectionErrorMarkers.btSerialNotOpen);
     }
     final ok = await port.writeBytesFromUint8List(
       Uint8List.fromList(data),
       timeout: 1000,
     );
     if (!ok) {
-      throw StateError('BT serial write timed out on $_portName');
+      throw StateError(
+        '${ConnectionErrorMarkers.btSerialWriteTimedOut} on $_portName',
+      );
     }
   }
 

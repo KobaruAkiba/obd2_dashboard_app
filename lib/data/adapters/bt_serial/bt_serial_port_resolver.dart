@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:serial_port_win32/serial_port_win32.dart';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/data/adapters/bt_serial/bt_serial_config.dart';
 
 /// Portable view of a Windows COM port (mirrors [PortInfo] fields we need).
@@ -60,8 +61,8 @@ class BtSerialPortResolver {
     final auto = autoDetect(ports);
     if (auto == null) {
       throw StateError(
-        'No OBD Bluetooth COM port found. Pair the ELM/OBD dongle in Windows '
-        'Settings, note the COMx in Device Manager, then set '
+        '${ConnectionErrorMarkers.noObdComPort} found. Pair the ELM/OBD dongle '
+        'in Windows Settings, note the COMx in Device Manager, then set '
         '${BtSerialConfig.comPortKey} via --dart-define or environment '
         '(example: --dart-define=${BtSerialConfig.comPortKey}=COM5).',
       );

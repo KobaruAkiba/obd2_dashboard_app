@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/data/adapters/can/can_bus_driver.dart';
 import 'package:odb_dashboard/data/adapters/can/can_config.dart';
@@ -52,8 +53,9 @@ class PcanDriver implements CanBusDriver {
       _bindings ??= PcanBindings.load(dllName: _dllName);
     } catch (e) {
       throw StateError(
-        'Failed to load $_dllName. Install PEAK PCAN-Basic drivers and ensure '
-        'the DLL is on PATH / next to the app. Underlying error: $e',
+        '${ConnectionErrorMarkers.pcanDllLoadFailed}: could not load $_dllName. '
+        'Install PEAK PCAN-Basic drivers and ensure the DLL is on PATH / next '
+        'to the app. Underlying error: $e',
       );
     }
 
@@ -61,9 +63,10 @@ class PcanDriver implements CanBusDriver {
     final status = _bindings!.canInitialize(_channel, _baud, 0, 0, 0);
     if (status != pcanErrorOk) {
       throw StateError(
-        'CAN_Initialize failed for channel 0x${_channel.toRadixString(16)} '
-        'baud=0x${_baud.toRadixString(16)}: status=0x${status.toRadixString(16)}. '
-        'Check that the PCAN device is connected and not in use.',
+        '${ConnectionErrorMarkers.canInitializeFailed} for channel '
+        '0x${_channel.toRadixString(16)} baud=0x${_baud.toRadixString(16)}: '
+        'status=0x${status.toRadixString(16)}. Check that the PCAN device is '
+        'connected and not in use.',
       );
     }
 
@@ -131,7 +134,7 @@ class PcanDriver implements CanBusDriver {
   @override
   Future<void> write(CanFrame frame) async {
     if (!_open || _bindings == null || _writeMsg == null) {
-      throw StateError('PCAN channel is not open');
+      throw StateError(ConnectionErrorMarkers.pcanChannelNotOpen);
     }
 
     final msg = _writeMsg!;
@@ -148,7 +151,8 @@ class PcanDriver implements CanBusDriver {
     final status = _bindings!.canWrite(_channel, msg);
     if (status != pcanErrorOk) {
       throw StateError(
-        'CAN_Write failed: status=0x${status.toRadixString(16)}',
+        '${ConnectionErrorMarkers.canWriteFailed}: '
+        'status=0x${status.toRadixString(16)}',
       );
     }
   }

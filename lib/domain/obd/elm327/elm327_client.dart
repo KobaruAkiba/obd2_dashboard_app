@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/core/logging/debug_log.dart';
 import 'package:odb_dashboard/domain/models/vehicle_data.dart';
 import 'package:odb_dashboard/domain/obd/elm327/elm327_commands.dart';
@@ -124,7 +125,10 @@ class Elm327Client {
     _pendingTimer = Timer(commandTimeout, () {
       if (!completer.isCompleted) {
         completer.completeError(
-          TimeoutException('ELM timeout waiting for $command', commandTimeout),
+          TimeoutException(
+            '${ConnectionErrorMarkers.elmTimeout} waiting for $command',
+            commandTimeout,
+          ),
         );
         _pending = null;
       }

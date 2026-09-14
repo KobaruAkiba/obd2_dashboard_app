@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:odb_dashboard/core/connection/connection_error_markers.dart';
 import 'package:odb_dashboard/domain/isotp/isotp_assembler.dart';
 import 'package:odb_dashboard/domain/isotp/isotp_types.dart';
 
@@ -126,7 +127,7 @@ class IsotpClient {
       final pending = _pending;
       if (pending != null && !pending.isCompleted) {
         pending.completeError(
-          TimeoutException('ISO-TP response timeout', d),
+          TimeoutException(ConnectionErrorMarkers.isotpTimeout, d),
         );
       }
       _pending = null;

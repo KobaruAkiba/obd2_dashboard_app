@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:odb_dashboard/core/theme/app_theme.dart';
-import 'package:odb_dashboard/presentation/dashboard/dashboard_screen.dart';
+import 'package:odb_dashboard/presentation/shell/dashboard_shell.dart';
 
 class ObdApp extends StatelessWidget {
   const ObdApp({super.key});
@@ -12,7 +12,7 @@ class ObdApp extends StatelessWidget {
       title: 'OBD Monitor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const DashboardScreen(),
+      home: const DashboardShell(),
     );
   }
 }

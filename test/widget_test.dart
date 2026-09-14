@@ -3,16 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:odb_dashboard/app.dart';
 
 void main() {
-  testWidgets('OBD app boots into dashboard', (tester) async {
+  testWidgets('OBD app boots into live cockpit shell', (tester) async {
     await tester.pumpWidget(const ObdApp());
     await tester.pump(); // first frame
     expect(find.text('OBD Monitor'), findsOneWidget);
-    expect(find.text('Mock data'), findsOneWidget); // debug-only switch
+    expect(find.text('Live'), findsWidgets);
+    expect(find.text('Diagnostics'), findsOneWidget);
+    expect(find.text('Connection'), findsOneWidget);
 
-    // Hardware stub connect delay is 800ms.
+    // Mock switch lives on the Connection tab (debug builds).
+    await tester.tap(find.text('Connection'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mock data'), findsOneWidget);
+
+    // Back to Live — gauges after stub connect delay (800ms).
+    await tester.tap(find.text('Live'));
+    await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 900));
     expect(find.textContaining('ENGINE'), findsOneWidget);
     expect(find.textContaining('SPEED'), findsOneWidget);
+    expect(find.textContaining('COOLANT'), findsOneWidget);
 
     // Dispose services so periodic mock timers are cancelled.
     await tester.pumpWidget(const SizedBox.shrink());

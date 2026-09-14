@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:odb_dashboard/core/theme/app_colors.dart';
+import 'package:odb_dashboard/core/theme/app_spacing.dart';
 import 'package:odb_dashboard/domain/models/connection_mode.dart';
 import 'package:odb_dashboard/presentation/connection/connection_mode_ui.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/status_led.dart';
+import 'package:odb_dashboard/presentation/dashboard/widgets/status_pill.dart';
 
 class ConnectionBanner extends StatelessWidget {
   const ConnectionBanner({
@@ -15,41 +18,58 @@ class ConnectionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = mode.color;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md - 2,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: mode.color.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(color: AppColors.ledRing(color)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: mode.color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(mode.icon, color: mode.color, size: 20),
-          ),
-          const SizedBox(width: 12),
+          StatusIconBadge(icon: mode.icon, color: color, size: 42),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  mode.label,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.speed,
+                Row(
+                  children: [
+                    StatusLed(color: color, size: 9),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        mode.label,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: AppColors.onSurfaceBright,
+                            ),
+                        overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    StatusPill(
+                      label: mode.shortCode,
+                      color: color,
+                      led: false,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   detail,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurfaceMuted,
+                        fontSize: 13,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

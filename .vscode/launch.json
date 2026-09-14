@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "OBD Monitor (Android Emulator)",
+      "name": "OBD Monitor (Android Emulator · Auto)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -25,6 +25,66 @@
       "program": "lib/main.dart",
       "deviceId": "emulator",
       "flutterMode": "profile"
+    },
+    {
+      "name": "OBD Monitor (Android · BLE UART)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "android",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=ble-uart"
+      ]
+    },
+    {
+      "name": "OBD Monitor (Android · Mock)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "android",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=mock"
+      ]
+    },
+    {
+      "name": "OBD Monitor (Windows · Auto / BT serial)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows"
+    },
+    {
+      "name": "OBD Monitor (Windows · BT serial · COM5)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=bt-serial",
+        "--dart-define=OBD_COM_PORT=COM5"
+      ]
+    },
+    {
+      "name": "OBD Monitor (Windows · CAN / PCAN)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=windows-can-bus",
+        "--dart-define=OBD_CAN_CHANNEL=PCAN_USBBUS1",
+        "--dart-define=OBD_CAN_BITRATE=500000"
+      ]
+    },
+    {
+      "name": "OBD Monitor (Windows · Mock)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "toolArgs": [
+        "--dart-define=OBD_SERVICE_TYPE=mock"
+      ]
     }
   ]
 }
